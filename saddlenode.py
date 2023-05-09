@@ -28,6 +28,7 @@ sol_y = solve_ivp(
 )
 
 fig, axs = plt.subplots(3)
+# Plot solutions to ode's
 sol_plot = axs[0].plot(sol.t, sol.y[0, :], color='b', label='x(t)')
 axs[0].plot(sol_y.t, sol_y.y[0, :], color='orange', label='y(t)')
 axs[0].set_xlabel('time')
@@ -37,6 +38,7 @@ axs[0].set_ylim([-2, 2])
 axs[0].grid()
 axs[0].legend()
 
+# Plot phase space of derivatives
 phase_space = axs[1].plot(xx, dxdt(sol.t,xx,r), color='b', label='x')
 axs[1].plot(xx, dydt(sol_y.t,xx,r), color='orange', label='y')
 scat = axs[1].scatter([], [], c='black')
@@ -47,6 +49,7 @@ axs[1].set_ylabel(r'$\dot{x}$', rotation=0)
 axs[1].set_ylim([-1.1,1.1])
 axs[1].legend()
 
+# Streamlines of X - Y space 
 w = 5
 Y, X = np.mgrid[-w:w:1000j, -w:w:1000j]
 U = dxdt(tt, X, r)
