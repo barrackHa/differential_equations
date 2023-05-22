@@ -88,6 +88,7 @@ if __name__ == '__main__':
     )
 
     fig, axs = plt.subplots(1)
+    # for win_size in [21,41,101]:
     win_size = 21 
     for i in range (1, 20):
         ar1s = []
