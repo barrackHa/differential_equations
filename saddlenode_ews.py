@@ -88,6 +88,7 @@ if __name__ == '__main__':
     )
 
     fig, axs = plt.subplots(1)
+    axs.set_facecolor(plt.cm.gray(.95))
     # for win_size in [21,41,101]:
     win_size = 21 
     for i in range (1, 20):
@@ -107,8 +108,6 @@ if __name__ == '__main__':
         axs = fig.add_subplot(111, label=f'{i}', frame_on=False)        
         print(block_idxs[:len(ar1s)].shape, len(ar1s))
         axs.plot(sol.t[block_idxs[:len(ar1s)]], ar1s)
-
         
     plot(tt, xx, sol, epsilon, a, show_plot=False)
     plt.show()
-    
