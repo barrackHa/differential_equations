@@ -27,7 +27,6 @@ if __name__ == '__main__':
     theta_0 = 0
     mu_0 = 0
     epsilon = 1
-    a = 25
     tt = np.linspace(0, 10, 1000)
     xx = np.linspace(-500, 500, 100000)
 
