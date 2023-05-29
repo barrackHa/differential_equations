@@ -5,6 +5,8 @@ from scipy.integrate import odeint, solve_ivp
 from scipy import optimize
 from mpl_toolkits.mplot3d import Axes3D
 from ews_helper import get_ews, itoEulerMaruyama
+from scipy.stats import linregress
+from pathlib import Path
 
 def plot(tt, xx, sol, epsilon, a, show_plot=True, stream_dim=5):
     # plt.plot(sol.y[0, :], sol.y[1, :])
@@ -90,24 +92,56 @@ if __name__ == '__main__':
         noise=[gamma,0],args=(epsilon, a),save_derivative=True
     )
 
-    fig, axs = plt.subplots(1)
-    axs.set_facecolor(plt.cm.gray(.95))
+    slope,intercept,_,_,_ = linregress(tt, results[:,0])
+    # mu=0=intercept+slope*t iff t=-intercept/slope
+    t_star = tt[np.where(results[:,0] >= 1)[0][0]]
+
+
+    fig, axs = plt.subplots(3,1)
+    for ax in axs:
+        ax.set_facecolor(plt.cm.gray(.95))
     # for win_size in [21,41,101]:
     win_size = 21 
     for i in range (1, 2):
-        ar1s = get_ews(sol.t, sol.y[0, : ], win_size=win_size, offset=i)['ar1s']
-        block_idxs, noisy_ar1s = map(
-            get_ews(sol.t, results[:,0], win_size=win_size, offset=i).get,
-            ['block_idxs', 'ar1s']
+        block_idxs, ar1s, decays, vars = get_ews(
+            sol.t, sol.y[0, : ], win_size=win_size, offset=i
+        )
+        block_idxs, noisy_ar1s, noisy_decays, noisy_vars = get_ews(
+            sol.t, results[:,0], win_size=win_size, offset=i
         )
         
-        axs.plot(sol.t[block_idxs[:len(ar1s)]], ar1s, label=f'Normal Form')
-        axs.plot(sol.t[block_idxs[:len(ar1s)]], noisy_ar1s, label=f'With Noise')
-        axs.legend()
+        # Plot AR1s
+        axs[0].plot(sol.t[block_idxs[:len(ar1s)]], ar1s, label=f'No Noise')
+        axs[0].plot(sol.t[block_idxs[:len(ar1s)]], noisy_ar1s, label=f'With Noise')
+        axs[0].axvline(
+            t_star, color='k', linestyle='--', 
+            alpha=0.5, label='x=0'
+        )
+
+        # Plot Decays
+        axs[1].plot(sol.t[block_idxs[:len(decays)]], decays, label=f'No Noise')
+        axs[1].plot(sol.t[block_idxs[:len(decays)]], noisy_decays, label=f'With Noise')
+        axs[1].axvline(
+            t_star, color='k', linestyle='--', 
+            alpha=0.5, label='x=0'
+        )
+
+        # Plot Variance
+        axs[2].plot(sol.t[block_idxs[:len(vars)]], vars, label=f'No Noise')
+        axs[2].plot(sol.t[block_idxs[:len(vars)]], noisy_vars, label=f'With Noise')
+        axs[2].axvline(
+            t_star, color='k', linestyle='--', 
+            alpha=0.5, label='x=0'
+        )
+
+        for ax in axs:
+            ax.legend()
+    fig.savefig(Path(__file__).parents[0]/f'tmp_figs/sdnode_ews.png')
         
     fig, axs = plot(tt, xx, sol, epsilon, a, show_plot=False)
     axs[0].plot(
         tt, results[:,0], color='crimson', label='Maroyama_x(t)', ls='-.'
     )
     axs[0].legend()
+    fig.savefig(Path(__file__).parents[0]/f'tmp_figs/sdnode_data.png')
     plt.show()
