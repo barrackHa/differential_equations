@@ -110,6 +110,36 @@ def calc_and_plot_ews(
             )
     return fig, [ax0, ax1, ax2], block_idxs, ar1s, decays, vars
 
+def plot_pca_analysis(x, y, title):
+    pca = PCA(n_components=(2))
+    pca_input = np.array([x, y]).T
+    pca_input = StandardScaler().fit_transform(pca_input)
+    principalComponents = pca.fit_transform(pca_input).T
+    fig = plt.figure(figsize=(16, 8))
+    fig.suptitle(title, fontsize=10)
+    spec = fig.add_gridspec(4, 2)
+    ax00, ax01 = fig.add_subplot(spec[0, 0]), fig.add_subplot(spec[0, 1])
+    axs = [fig.add_subplot(spec[i, :]) for i in range(1,4)]
+    ax00.plot(principalComponents[0], principalComponents[1], label='PC\'s', c='b')
+    set_axes_title(ax00, 'PC Plane', fontsize=4)
+    ax00.set_xlabel('PC1')
+    ax00.set_ylabel('PC2')
+    ax01.barh(['PC1','PC2'], pca.explained_variance_ratio_, color='orange')
+    set_axes_title(ax01, 'PCA Explained Variance Ratio', fontsize=4)
+    ax01.invert_yaxis()
+
+    fig, axs, block_idxs, ar1s, decays, vars = calc_and_plot_ews(
+        axs, time, principalComponents[0], 
+        ews_win_size, ews_offset, label='PC1', t_star=t_star
+    )
+
+    fig, axs, block_idxs, ar1s, decays, vars = calc_and_plot_ews(
+        axs, time, principalComponents[1], 
+        ews_win_size, ews_offset, label='PC2', t_star=t_star
+    )
+    return fig, axs
+
+
 if __name__ == '__main__':
 
     r_0 = 0.1
@@ -119,7 +149,7 @@ if __name__ == '__main__':
     mu_0 = -2.0
     epsilon = 0.01
     sigma = 0.9
-    t_span, t_points= 510, 50000 
+    t_span, t_points= 410, 50000 
     time = np.linspace(0, t_span, t_points)
     dt = t_span/t_points
     ews_win_size, ews_offset = 21, 1
@@ -227,32 +257,14 @@ if __name__ == '__main__':
     plt.show()
     """
 
-    # PCA X-Y
-    pca = PCA(n_components=(2))
-    pca_input = np.array([x, y]).T
-    pca_input = StandardScaler().fit_transform(pca_input)
-    print(pca_input.shape)
-    principalComponents = pca.fit_transform(pca_input).T
-    print(principalComponents.shape)
-    print(pca.explained_variance_ratio_)
-    fig = plt.figure(figsize=(16, 8))
-    fig.suptitle('EWS Of X\'s W/O Noise (Hopf)', fontsize=10)
-    spec = fig.add_gridspec(4, 2)
-    ax00, ax01 = fig.add_subplot(spec[0, 0]), fig.add_subplot(spec[0, 1])
-    axs = [fig.add_subplot(spec[i, :]) for i in range(1,4)]
-    ax00.plot(principalComponents[0], principalComponents[1], label='PC\'s', c='b')
-    set_axes_title(ax00, 'PC Plane', fontsize=4)
-    ax00.set_xlabel('PC1')
-    ax00.set_ylabel('PC2')
-    ax01.barh(['PC1','PC2'], pca.explained_variance_ratio_, color='orange')
-    set_axes_title(ax01, 'PCA Explained Variance Ratio', fontsize=4)
-    ax01.invert_yaxis()
-
-    fig, axs, block_idxs, ar1s, decays, vars = calc_and_plot_ews(
-        axs, time, principalComponents[0], 
-        ews_win_size, ews_offset, label='PC1', t_star=t_star
+    # PCA X-Y 
+    fig, axs = plot_pca_analysis(x, y, 'EWS Of X&Y Without Noise (Hopf)')
+    
+    # PCA X-Y with noise
+    fig, axs = plot_pca_analysis(
+        noisy_x, noisy_y, 'EWS Of X&Y Without Noise (Hopf)'
     )
-
+    
     plt.show()
 
 # with noise / without noise
