@@ -22,13 +22,12 @@ def dSdt(t, S, epsilon, omega, b):
 
 if __name__ == '__main__':
     r_0 = 1
-    omega = 1
+    omega = 2
     b = 1
     theta_0 = 0
-    mu_0 = 0
-    epsilon = 1
-    tt = np.linspace(0, 10, 1000)
-    xx = np.linspace(-500, 500, 100000)
+    mu_0 = -1
+    epsilon = 0.01
+    tt = np.linspace(0, 200, 10000)
 
     sol = solve_ivp(
         dSdt, t_span=[min(tt), max(tt)], 
@@ -41,17 +40,19 @@ if __name__ == '__main__':
     fig,axs = plt.subplots(1,1,figsize=(8,8))
     axs.set_facecolor(plt.cm.gray(.95))
     axs.plot(XX, YY)
-    axs.scatter(XX[0], YY[0], c='r', s=50, label='start')
-    axs.scatter(XX[-1], YY[-1], c='g', s=50, label='end')
+    axs.scatter(XX[0], YY[0], c='g', s=50, label='start')
+    axs.scatter(XX[-1], YY[-1], c='r', s=50, label='end')
 
+    # fig, axs1 = plt.subplots(1,1,figsize=(8,8))
+    # axs1.plot = plt.plot(sol.t, sol.y[2, : ], label='r')
     # Y, X = np.mgrid[-5:5:1000j, -5:5:1000j]
     # U, V, W = dSdt(sol.t,[X,Y, np.ones_like(Y)], epsilon, omega, b)
     # stream = axs.streamplot(X, Y, U, V, density = .5, color="crimson")
     RR = np.sqrt(XX**2 + YY**2)
     TT = np.arctan2(YY, XX)
     U, V, W = dSdt(sol.t,[RR,TT, 10*np.ones_like(XX)], epsilon, omega, b)
-    UU = U * np.cos(TT) - V * np.sin(TT)
-    VV = U * np.sin(TT) + V * np.cos(TT)
+    UU = U * np.cos(TT) 
+    VV = U * np.sin(TT) 
     axs.quiver(XX, YY, UU, VV, color="purple", alpha=1)
 
     plt.legend()
