@@ -122,26 +122,12 @@ if __name__ == '__main__':
     # for win_size in [21,41,101]:
     win_size = 21 
     for i in range (1, 2):
-        ar1s = []
-        noisy_ar1s = []
-        offset = i
-        block_idxs = np.arange(sol.t.shape[0]-win_size, step=offset)
-        x_sol = sol.y[0, : ]
+        ar1s = get_ews(sol.t, sol.y[0, : ], win_size=win_size, offset=i)['ar1s']
+        block_idxs, noisy_ar1s = map(
+            get_ews(sol.t, results[:,0], win_size=win_size, offset=i).get,
+            ['block_idxs', 'ar1s']
+        )
         
-        for i in block_idxs:
-            try:
-                lag0 = x_sol[i: i+win_size]
-                lag1 = x_sol[i+offset: i+offset+win_size]
-                n_lag0 = results[i: i+win_size, 0]
-                n_lag1 = results[i+offset: i+offset+win_size, 0]
-                ar1s.append(np.corrcoef(lag0, lag1)[0, 1])
-                noisy_ar1s.append(np.corrcoef(n_lag0, n_lag1)[0, 1])
-            except:
-                print(f'error in {i}')
-
-        
-        # axs = fig.add_subplot(111, label=f'{i}', frame_on=False)        
-        print(block_idxs[:len(ar1s)].shape, len(ar1s))
         axs.plot(sol.t[block_idxs[:len(ar1s)]], ar1s, label=f'Normal Form')
         axs.plot(sol.t[block_idxs[:len(ar1s)]], noisy_ar1s, label=f'With Noise')
         axs.legend()
