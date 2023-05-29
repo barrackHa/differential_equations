@@ -4,9 +4,9 @@ import matplotlib.animation as animation
 from scipy.integrate import odeint, solve_ivp
 from scipy import optimize
 from mpl_toolkits.mplot3d import Axes3D
-from ews_helper import get_ews
+from ews_helper import get_ews, itoEulerMaruyama
 
-def plot(tt, xx, sol, epsilon, a, show_plot=True):
+def plot(tt, xx, sol, epsilon, a, show_plot=True, stream_dim=5):
     # plt.plot(sol.y[0, :], sol.y[1, :])
     fig, axs = plt.subplots(3)
     # Plot solutions to ode's
@@ -39,20 +39,12 @@ def plot(tt, xx, sol, epsilon, a, show_plot=True):
     axs[1].legend()
 
     # Streamlines of X - Y space 
-    w = 5
+    w = stream_dim
     Y, X = np.mgrid[-w:w:1000j, -w:w:1000j]
     U, V = dSdt(sol.t,[X,Y], epsilon, a)
-    # print(X.shape, Y.shape, U.shape, V.shape)
     stream = axs[2].streamplot(X, Y, U, V, density = 1)
-    axs[2].set_ylim([-5, 5])
+    axs[2].set_ylim([-1*w, w])
     axs[2].set_xlim([-1*w, w])
-
-    # left_atractor_line = axs[2].axvline(-1*r, c='black', ls='--')
-    # right_atractor_line = axs[2].axvline(r, c='black', ls='--')
-    # axs[2].axhline(0, c='black')
-    # left_atractor_scat = axs[2].scatter((-1 * r),0, facecolors='none', edgecolors='black')
-    # right_atractor_scat = axs[2].scatter(r,0, c='black')
-    # axs[2].set_aspect('equal', adjustable='box')
 
     if show_plot:
         plt.show()
@@ -73,25 +65,6 @@ def dSdt(t, S, epsilon, a):
         y + a*x**2 - x**3,
         epsilon * shaper
     ]
-
-def itoEulerMaruyama(model, y0, time, noise, args=None, save_derivative=False):
-    ret_val = np.zeros((len(time), len(y0)))
-    noise = np.array(noise)
-    y0 = np.array(y0)
-    ret_val[0, :] = y0
-    dt = time[1] - time[0]
-    derivatives = np.zeros((len(time), len(y0)))
-    for i in range(1, len(time)):
-        derivatives[i-1, :] = np.array(
-            model(time[i], ret_val[i - 1, :], *args) 
-                if args else model(ret_val[i - 1, :], time[i])
-        ) 
-        ret_val[i, :] = ret_val[i - 1, :] + \
-                        derivatives[i-1, :] * dt + \
-                        noise*np.random.normal(0,np.sqrt(dt),ret_val.shape[1])
-        
-    return ret_val if not save_derivative else (ret_val,derivatives)
-
 
 if __name__ == '__main__':
 
@@ -136,8 +109,5 @@ if __name__ == '__main__':
     axs[0].plot(
         tt, results[:,0], color='crimson', label='Maroyama_x(t)', ls='-.'
     )
-    # axs[0].plot(
-    #     tt, results[:,1], color='green', label='Maroyama_y(t)', ls=':'
-    # )
     axs[0].legend()
     plt.show()
