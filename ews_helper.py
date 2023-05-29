@@ -67,7 +67,8 @@ def get_ews(time, arr, win_size=21, offset=1):
             ar1s[i] = np.corrcoef(lag0, lag1)[0, 1]
         except Exception as e:
             print(f'Failed to calculate ar1s. Error in #{i}\n{e}')
-            print('Calculating ar1s using covarience instead')
+            # ToDo: use logger instead of print
+            # print('Calculating ar1s using covarience instead')
             try:
                 c = np.cov(lag0, lag1)
                 if c[0,1]==0 or c[1,0]==0:
