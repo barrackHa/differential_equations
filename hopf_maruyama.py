@@ -6,8 +6,8 @@ from scipy.stats import linregress
 from ews_helper import get_ews, itoEulerMaruyama
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
-
-# plt.style.use('comDePy.mplstyle')
+import warnings
+warnings.filterwarnings("error")
               
 def annotate_axes(ax, text, fontsize=12):
     ax.text(0.5, 0.5, text, transform=ax.transAxes,
@@ -241,16 +241,20 @@ if __name__ == '__main__':
     ax00, ax01 = fig.add_subplot(spec[0, 0]), fig.add_subplot(spec[0, 1])
     axs = [fig.add_subplot(spec[i, :]) for i in range(1,4)]
     ax00.plot(principalComponents[0], principalComponents[1], label='PC\'s', c='b')
+    set_axes_title(ax00, 'PC Plane', fontsize=4)
+    ax00.set_xlabel('PC1')
+    ax00.set_ylabel('PC2')
     ax01.barh(['PC1','PC2'], pca.explained_variance_ratio_, color='orange')
     set_axes_title(ax01, 'PCA Explained Variance Ratio', fontsize=4)
     ax01.invert_yaxis()
-    
+
     fig, axs, block_idxs, ar1s, decays, vars = calc_and_plot_ews(
         axs, time, principalComponents[0], 
         ews_win_size, ews_offset, label='PC1', t_star=t_star
     )
 
     plt.show()
+
 # with noise / without noise
 # AR1, decay time, var
 # [x, y], [r, theta, mu], PCA

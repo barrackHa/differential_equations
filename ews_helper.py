@@ -16,24 +16,32 @@ def solve_equality(arr, r):
     return np.argmin(np.sign(arr - r))
 
 def get_acorr_decay_time(arr):
-    frame_rate = 1
-    tmp_a = z_score_normalizer(arr)
-    acorr = np.correlate(tmp_a, tmp_a, mode='full') / tmp_a.size
+    try:
+        frame_rate = 1
+        tmp_a = z_score_normalizer(arr)
+        if (tmp_a==0).all():
+            tmp_a = np.ones_like(tmp_a)
+        if tmp_a.size == 0:
+            raise Exception('tmp_a.size == 0')
+        acorr = np.correlate(tmp_a, tmp_a, mode='full') / tmp_a.size
 
-    idx = solve_equality(
-        acorr[acorr.size // 2:], 1 / np.e
-    )
-    yy = acorr[acorr.size // 2:]
-    xx = np.arange(yy.size) / frame_rate
-    piecewise_linear_acorr = interp1d(xx, yy, kind='linear')
+        idx = solve_equality(
+            acorr[acorr.size // 2:], 1 / np.e
+        )
+        yy = acorr[acorr.size // 2:]
+        xx = np.arange(yy.size) / frame_rate
+        piecewise_linear_acorr = interp1d(xx, yy, kind='linear')
 
-    delta = 0.001
-    grained_xx = np.arange(0, idx, delta) / frame_rate
-    approximation = piecewise_linear_acorr(grained_xx)
-    decay_time = solve_equality(
-        approximation, 1 / np.e
-    ) * delta / frame_rate
-
+        delta = 0.001
+        grained_xx = np.arange(0, idx, delta) / frame_rate
+        approximation = piecewise_linear_acorr(grained_xx)
+        decay_time = solve_equality(
+            approximation, 1 / np.e
+        ) * delta / frame_rate
+    except Exception as e:
+        print(f'error in get_acorr_decay_time\n{e}')
+        exit(-1)
+        
     return decay_time
 
 
@@ -44,18 +52,42 @@ def get_ews(time, arr, win_size=21, offset=1):
     """ 
     block_idxs = np.arange(time.shape[0]-win_size, step=offset)
     ar1s = np.zeros_like(block_idxs, dtype=np.float64)
-    ar_decay_times = np.zeros_like(block_idxs, dtype=np.float64)
+    ar_decay_times = np.ones_like(block_idxs, dtype=np.float64)
     vars = np.zeros_like(block_idxs, dtype=np.float64)
 
     for i in block_idxs:
+        failed = False
         try:
             lag0 = arr[i: i+win_size]
             lag1 = arr[i+offset: i+offset+win_size]
-            ar1s[i] = np.corrcoef(lag0, lag1)[0, 1]
-            ar_decay_times[i] = get_acorr_decay_time(lag0)
-            vars[i] = np.var(lag0)
         except Exception as e:
-            print(f'error in {i}\n{e}')
+            print(f'Failed to splice arraies. Error in #{i}\n{e}')
+            failed = True
+        try:
+            ar1s[i] = np.corrcoef(lag0, lag1)[0, 1]
+        except Exception as e:
+            print(f'Failed to calculate ar1s. Error in #{i}\n{e}')
+            print('Calculating ar1s using covarience instead')
+            try:
+                c = np.cov(lag0, lag1)
+                if c[0,1]==0 or c[1,0]==0:
+                    ar1s[i] = c[0,0]
+                else:
+                    ar1s[i] = c[0,1]/np.sqrt(c[0,0]*c[1,1])
+            except Exception as e:
+                failed = True   
+        try:
+            ar_decay_times[i] = get_acorr_decay_time(lag0)
+        except Exception as e:
+            print(f'Failed to calculate ar_decay_times. Error in #{i}\n{e}')
+            failed = True
+        try:
+            vars[i] = np.var(lag0) 
+        except Exception as e:
+            print(f'Failed to calculate vars. Error in #{i}\n{e}')
+            failed = True
+        if failed: 
+            exit(-1)
             
 
     ar_decay_times = ar_decay_times/np.mean(ar_decay_times)
