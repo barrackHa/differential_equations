@@ -6,6 +6,8 @@ from scipy.stats import linregress
 from ews_helper import get_ews, itoEulerMaruyama
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
+from pathlib import Path
+
 import warnings
 warnings.filterwarnings("error")
               
@@ -197,7 +199,8 @@ if __name__ == '__main__':
         ax.legend()
         ax.grid()
 
-    """
+    fig.savefig(Path(__file__).parents[0]/f'tmp_figs/hopf.png')
+
     ## EWS Thetas 
     
     fig = plt.figure(figsize=(16, 8))
@@ -214,18 +217,14 @@ if __name__ == '__main__':
         axs, time, no_noise[2][:,1], 
         ews_win_size, ews_offset, label='No noise'
     )
-
-
-    plt.show()
-    exit()
-    """
+    fig.savefig(Path(__file__).parents[0]/f'tmp_figs/thetas.png')    
     
     x = no_noise[2][:,0]*np.cos(no_noise[2][:,1])
     y = no_noise[2][:,0]*np.sin(no_noise[2][:,1])
     noisy_x = noisy_hopf[2][:,0]*np.cos(noisy_hopf[2][:,1])
     noisy_y = noisy_hopf[2][:,0]*np.sin(noisy_hopf[2][:,1])
     
-    """## EWS For X-Y W/O Noise
+    ## EWS For X-Y W/O Noise
     fig = plt.figure(figsize=(16, 8))
     fig.suptitle('EWS Of X\'s W/O Noise (Hopf)', fontsize=10)
     spec = fig.add_gridspec(3, 2)
@@ -239,6 +238,7 @@ if __name__ == '__main__':
         axs, time, x, 
         ews_win_size, ews_offset, label='x'
     )
+    fig.savefig(Path(__file__).parents[0]/f'tmp_figs/xs.png')
     
     # Y W/O noise
     fig = plt.figure(figsize=(16, 8))
@@ -253,17 +253,17 @@ if __name__ == '__main__':
         axs, time, y, 
         ews_win_size, ews_offset, label='y'
     )
-        
-    plt.show()
-    """
+    fig.savefig(Path(__file__).parents[0]/f'tmp_figs/ys.png')
+    
 
     # PCA X-Y 
     fig, axs = plot_pca_analysis(x, y, 'EWS Of X&Y Without Noise (Hopf)')
-    
+    fig.savefig(Path(__file__).parents[0]/f'tmp_figs/pca_no_noise.png')
     # PCA X-Y with noise
     fig, axs = plot_pca_analysis(
         noisy_x, noisy_y, 'EWS Of X&Y Without Noise (Hopf)'
     )
+    fig.savefig(Path(__file__).parents[0]/f'tmp_figs/pca_noisy.png')
     
     plt.show()
 
