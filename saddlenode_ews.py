@@ -4,8 +4,10 @@ import matplotlib.animation as animation
 from scipy.integrate import odeint, solve_ivp
 from scipy import optimize
 from mpl_toolkits.mplot3d import Axes3D
+from ews_helper import get_ews
 
 def plot(tt, xx, sol, epsilon, a, show_plot=True):
+    # plt.plot(sol.y[0, :], sol.y[1, :])
     fig, axs = plt.subplots(3)
     # Plot solutions to ode's
     sol_plot = axs[0].plot(sol.t, sol.y[0, :], color='b', label='x(t)')
@@ -16,7 +18,7 @@ def plot(tt, xx, sol, epsilon, a, show_plot=True):
     axs[0].set_ylim(
         [
             min(sol.y[0, :]), 
-            max(sol.y[0, :])+2
+            max(sol.y[0, :])+5
     ])
     axs[0].grid()
     axs[0].legend()
@@ -72,12 +74,32 @@ def dSdt(t, S, epsilon, a):
         epsilon * shaper
     ]
 
+def itoEulerMaruyama(model, y0, time, noise, args=None, save_derivative=False):
+    ret_val = np.zeros((len(time), len(y0)))
+    noise = np.array(noise)
+    y0 = np.array(y0)
+    ret_val[0, :] = y0
+    dt = time[1] - time[0]
+    derivatives = np.zeros((len(time), len(y0)))
+    for i in range(1, len(time)):
+        derivatives[i-1, :] = np.array(
+            model(time[i], ret_val[i - 1, :], *args) 
+                if args else model(ret_val[i - 1, :], time[i])
+        ) 
+        ret_val[i, :] = ret_val[i - 1, :] + \
+                        derivatives[i-1, :] * dt + \
+                        noise*np.random.normal(0,np.sqrt(dt),ret_val.shape[1])
+        
+    return ret_val if not save_derivative else (ret_val,derivatives)
+
+
 if __name__ == '__main__':
 
     r = 1
     x0 = 0
     y0 = 0
     epsilon = 1
+    gamma = 0.0001 # noise intensity
     a = 25
     tt = np.linspace(0, 4, 1000)
     xx = np.linspace(-30, 30, 100000)
@@ -87,12 +109,21 @@ if __name__ == '__main__':
         y0=[x0, y0], t_eval=tt, args=(epsilon, a)
     )
 
+    # Euler Maruyama
+    results,derivatives = itoEulerMaruyama(
+        model=dSdt,
+        y0=[x0, y0],
+        time=tt,
+        noise=[gamma,0],args=(epsilon, a),save_derivative=True
+    )
+
     fig, axs = plt.subplots(1)
     axs.set_facecolor(plt.cm.gray(.95))
     # for win_size in [21,41,101]:
     win_size = 21 
-    for i in range (1, 20):
+    for i in range (1, 2):
         ar1s = []
+        noisy_ar1s = []
         offset = i
         block_idxs = np.arange(sol.t.shape[0]-win_size, step=offset)
         x_sol = sol.y[0, : ]
@@ -101,13 +132,26 @@ if __name__ == '__main__':
             try:
                 lag0 = x_sol[i: i+win_size]
                 lag1 = x_sol[i+offset: i+offset+win_size]
+                n_lag0 = results[i: i+win_size, 0]
+                n_lag1 = results[i+offset: i+offset+win_size, 0]
                 ar1s.append(np.corrcoef(lag0, lag1)[0, 1])
+                noisy_ar1s.append(np.corrcoef(n_lag0, n_lag1)[0, 1])
             except:
                 print(f'error in {i}')
 
-        axs = fig.add_subplot(111, label=f'{i}', frame_on=False)        
-        print(block_idxs[:len(ar1s)].shape, len(ar1s))
-        axs.plot(sol.t[block_idxs[:len(ar1s)]], ar1s)
         
-    plot(tt, xx, sol, epsilon, a, show_plot=False)
+        # axs = fig.add_subplot(111, label=f'{i}', frame_on=False)        
+        print(block_idxs[:len(ar1s)].shape, len(ar1s))
+        axs.plot(sol.t[block_idxs[:len(ar1s)]], ar1s, label=f'Normal Form')
+        axs.plot(sol.t[block_idxs[:len(ar1s)]], noisy_ar1s, label=f'With Noise')
+        axs.legend()
+        
+    fig, axs = plot(tt, xx, sol, epsilon, a, show_plot=False)
+    axs[0].plot(
+        tt, results[:,0], color='crimson', label='Maroyama_x(t)', ls='-.'
+    )
+    # axs[0].plot(
+    #     tt, results[:,1], color='green', label='Maroyama_y(t)', ls=':'
+    # )
+    axs[0].legend()
     plt.show()
