@@ -4,7 +4,11 @@ from matplotlib import animation as anim, rc
 from matplotlib.collections import LineCollection
 from scipy.stats import linregress
 from ews_helper import get_ews, itoEulerMaruyama
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 
+# plt.style.use('comDePy.mplstyle')
+              
 def annotate_axes(ax, text, fontsize=12):
     ax.text(0.5, 0.5, text, transform=ax.transAxes,
             ha="right", va="top", fontsize=fontsize, color="darkgrey")
@@ -70,7 +74,41 @@ def calc_and_plot_hopf_maruyama(
 
     return t_star, ax, results, derivatives
 
+def calc_and_plot_ews(
+        axs, time, arr, ews_win_size=24, ews_offset=1, 
+        label=None, t_star=None, 
+        block_idxs=None, ar1s=None, decays=None, vars=None):
+    ax0, ax1, ax2 = axs
+    ax0.set_ylabel('AR1')
+    ax1.set_ylabel('Acorr Decay Times')
+    ax1.sharex(ax0)
+    ax2.set_ylabel('Variance')
+    ax2.sharex(ax0)
+    ax2.set_xlabel('Time')
+    
+    if ar1s is None or decays is None or vars is None or block_idxs is None:
+        block_idxs, ar1s, decays, vars = get_ews(
+                time, arr, 
+                win_size=ews_win_size, offset=ews_offset
+        )
+    ax0.plot(
+        time[block_idxs[:len(ar1s)]], ar1s, label=label
+    )
+    ax1.plot(
+        time[block_idxs[:len(decays)]], decays, label=label
+    )
+    ax2.plot(
+        time[block_idxs[:len(vars)]], vars, label=label
+    )
 
+    for ax in axs:
+        ax.legend()
+        if t_star is not None:
+            ax.axvline(
+                t_star, color='k', linestyle='--', 
+                alpha=0.5, label='mu=0'
+            )
+    return fig, [ax0, ax1, ax2], block_idxs, ar1s, decays, vars
 
 if __name__ == '__main__':
 
@@ -81,11 +119,16 @@ if __name__ == '__main__':
     mu_0 = -2.0
     epsilon = 0.01
     sigma = 0.9
-    time = np.linspace(0, 510, 50000)
+    t_span, t_points= 510, 50000 
+    time = np.linspace(0, t_span, t_points)
+    dt = t_span/t_points
     ews_win_size, ews_offset = 21, 1
 
-    # fig, axs = plt.subplots(1,2)
+    # Plot Hopf sim solutions
     fig = plt.figure(figsize=(16, 8))
+    ttl = f"""Hopf Model: df/dt = [(mu*r)-(r**3), {omega}+({b}*(r**2))+noise, {epsilon}]
+    [r_0, theta_0, mu_0]=[{r_0}, {theta_0}, {mu_0}], dt={dt}[Sec]"""
+    fig.suptitle(ttl, fontsize=10)
     spec = fig.add_gridspec(3, 2)
 
     # Hopf with noise
@@ -94,7 +137,8 @@ if __name__ == '__main__':
         ax00, time, r_0, theta_0, mu_0, epsilon, noise=sigma, b=b,
         label=None, color='b'
     )
-    set_axes_title(ax00, 'Hopf With noise', fontsize=8)
+    t_star = noisy_hopf[0]
+    set_axes_title(ax00, f'Hopf With noise (={sigma})', fontsize=4)
 
     # Hopf without noise
     ax01 = fig.add_subplot(spec[0, 1])
@@ -102,84 +146,111 @@ if __name__ == '__main__':
         ax01, time, r_0, theta_0, mu_0, epsilon, noise=0, b=b,
         label=None, color='orange'
     )
-    set_axes_title(ax01, 'Hopf Without noise', fontsize=8)
+    set_axes_title(ax01, 'Hopf Without noise', fontsize=4)
 
     ax1 = fig.add_subplot(spec[1, :])
+    set_axes_title(ax1, 'Solutions as a function of time', fontsize=6)
     ax1.set_facecolor(plt.cm.gray(.95))
-    ax1.set_xlabel('Time')
-    ax1.set_ylabel('AR1')
+    ax1.set_ylabel('F(t)')
 
-    """
-    # EWS of Hopf with noise
-    block_idxs, noisy_ar1s = map(
-        get_ews(
-            time, noisy_hopf[2][:,1], 
-            win_size=ews_win_size, offset=ews_offset
-        ).get,
-        ['block_idxs', 'ar1s']
-    )
-    ax1.plot(
-        time[block_idxs[:len(noisy_ar1s)]], noisy_ar1s, label=f'Noised Thetas'
-    )
-
-    # EWS of Hopf without noise
-    ar1s = get_ews(
-        time, no_noise[2][:,1], win_size=ews_win_size, offset=ews_offset
-    )['ar1s']    
-    ax1.plot(time[block_idxs[:len(ar1s)]], ar1s, label=f'No Noise Thetas')
+    for i in [0,2]:
+        ax1.plot(time, no_noise[2][:,i], label='r' if i==0 else 'mu')
+    ax1.axvline(no_noise[0], color='k', linestyle='--', alpha=0.5, label='mu=0')
     
-    # ax1.axvline(no_noise[0], color='k', linestyle='--', alpha=0.5, label='t*')
-    ax1.axvline(noisy_hopf[0], color='k', linestyle='--', alpha=0.5, label='noisy_t*')
-    ax1.legend()
-    set_axes_title(ax1, 'AR1 of Thetas', fontsize=8)
-    """
-
     ax2 = fig.add_subplot(spec[2, :], sharex=ax1)
+    ax2.set_xlabel('Time')
+    ax2.set_ylabel('Theta(t)')
     ax2.set_facecolor(plt.cm.gray(.95))
-    # ax2.set_xlabel('Time')
-    ax1.set_ylabel('AR1')
-    # for i in [0,2]:
-    #     ax2.plot(time, no_noise[2][:,i], label=f'results[:, {i}]')
-    # ax2.axvline(no_noise[0], color='k', linestyle='--', alpha=0.5, label='t*')
-    # ax2.legend()
+    ax2.plot(time, no_noise[2][:,1], label=f'Theta', c='g')
 
+    for ax in [ax1, ax2]:
+        ax.legend()
+        ax.grid()
+
+    """
+    ## EWS Thetas 
+    
+    fig = plt.figure(figsize=(16, 8))
+    fig.suptitle('EWS Of Thetas W/O Noise (Hopf)', fontsize=10)
+    spec = fig.add_gridspec(3, 2)
+    axs = [fig.add_subplot(spec[i, :]) for i in range(3)]
+    # With noise
+    fig, axs, block_idxs, ar1s, decays, vars = calc_and_plot_ews(
+        axs, time, noisy_hopf[2][:,1], 
+        ews_win_size, ews_offset, label='Noised Thetas'
+    )
+    # No noise
+    fig, axs, block_idxs, ar1s, decays, vars = calc_and_plot_ews(
+        axs, time, no_noise[2][:,1], 
+        ews_win_size, ews_offset, label='No noise'
+    )
+
+
+    plt.show()
+    exit()
+    """
+    
     x = no_noise[2][:,0]*np.cos(no_noise[2][:,1])
     y = no_noise[2][:,0]*np.sin(no_noise[2][:,1])
     noisy_x = noisy_hopf[2][:,0]*np.cos(noisy_hopf[2][:,1])
     noisy_y = noisy_hopf[2][:,0]*np.sin(noisy_hopf[2][:,1])
-
-
-    block_idxs, ar1s = map(
-        get_ews(
-            time, x, 
-            win_size=ews_win_size, offset=ews_offset
-        ).get,
-        ['block_idxs', 'ar1s']
-    )  
-    ax1.plot(time[block_idxs[:len(ar1s)]], ar1s, label=f'x')
-
-    ar1s = get_ews(
-        time, y, win_size=ews_win_size, offset=ews_offset
-    )['ar1s']    
-    ax1.plot(time[block_idxs[:len(ar1s)]], ar1s, label=f'y')
-
-    block_idxs, ar1s = map(
-        get_ews(
-            time, noisy_x, 
-            win_size=ews_win_size, offset=ews_offset
-        ).get,
-        ['block_idxs', 'ar1s']
-    )  
-    ax2.plot(time[block_idxs[:len(ar1s)]], ar1s, label=f'noisy_x')
-
-    ar1s = get_ews(
-        time, noisy_y, win_size=ews_win_size, offset=ews_offset
-    )['ar1s']    
-    ax2.plot(time[block_idxs[:len(ar1s)]], ar1s, label=f'noisy_y')
-    ax2.legend()
+    
+    """## EWS For X-Y W/O Noise
+    fig = plt.figure(figsize=(16, 8))
+    fig.suptitle('EWS Of X\'s W/O Noise (Hopf)', fontsize=10)
+    spec = fig.add_gridspec(3, 2)
+    axs = [fig.add_subplot(spec[i, :]) for i in range(3)]
+    # X W/O noise
+    fig, axs, block_idxs, ar1s, decays, vars = calc_and_plot_ews(
+        axs, time, noisy_x, 
+        ews_win_size, ews_offset, label='noisy_x', t_star=t_star
+    )
+    fig, axs, block_idxs, ar1s, decays, vars = calc_and_plot_ews(
+        axs, time, x, 
+        ews_win_size, ews_offset, label='x'
+    )
+    
+    # Y W/O noise
+    fig = plt.figure(figsize=(16, 8))
+    fig.suptitle('EWS Of Y\'s W/O Noise (Hopf)', fontsize=10)
+    spec = fig.add_gridspec(3, 2)
+    axs = [fig.add_subplot(spec[i, :]) for i in range(3)]
+    fig, axs, block_idxs, ar1s, decays, vars = calc_and_plot_ews(
+        axs, time, noisy_y, 
+        ews_win_size, ews_offset, label='noisy_x', t_star=t_star
+    )
+    fig, axs, block_idxs, ar1s, decays, vars = calc_and_plot_ews(
+        axs, time, y, 
+        ews_win_size, ews_offset, label='y'
+    )
         
     plt.show()
+    """
 
+    # PCA X-Y
+    pca = PCA(n_components=(2))
+    pca_input = np.array([x, y]).T
+    pca_input = StandardScaler().fit_transform(pca_input)
+    print(pca_input.shape)
+    principalComponents = pca.fit_transform(pca_input).T
+    print(principalComponents.shape)
+    print(pca.explained_variance_ratio_)
+    fig = plt.figure(figsize=(16, 8))
+    fig.suptitle('EWS Of X\'s W/O Noise (Hopf)', fontsize=10)
+    spec = fig.add_gridspec(4, 2)
+    ax00, ax01 = fig.add_subplot(spec[0, 0]), fig.add_subplot(spec[0, 1])
+    axs = [fig.add_subplot(spec[i, :]) for i in range(1,4)]
+    ax00.plot(principalComponents[0], principalComponents[1], label='PC\'s', c='b')
+    ax01.barh(['PC1','PC2'], pca.explained_variance_ratio_, color='orange')
+    set_axes_title(ax01, 'PCA Explained Variance Ratio', fontsize=4)
+    ax01.invert_yaxis()
+    
+    fig, axs, block_idxs, ar1s, decays, vars = calc_and_plot_ews(
+        axs, time, principalComponents[0], 
+        ews_win_size, ews_offset, label='PC1', t_star=t_star
+    )
+
+    plt.show()
 # with noise / without noise
 # AR1, decay time, var
 # [x, y], [r, theta, mu], PCA
