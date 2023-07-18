@@ -143,5 +143,5 @@ if __name__ == '__main__':
         tt, results[:,0], color='crimson', label='Maroyama_x(t)', ls='-.'
     )
     axs[0].legend()
-    fig.savefig(Path(__file__).parents[0]/f'tmp_figs/sdnode_data.png')
+    # fig.savefig(Path(__file__).parents[0]/f'tmp_figs/sdnode_data.png')
     plt.show()
