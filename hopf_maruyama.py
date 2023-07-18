@@ -155,7 +155,7 @@ if __name__ == '__main__':
     time = np.linspace(0, t_span, t_points)
     dt = t_span/t_points
     ews_win_size, ews_offset = 21, 1
-
+ 
     # Plot Hopf sim solutions
     fig = plt.figure(figsize=(16, 8))
     ttl = f"""Hopf Model: df/dt = [(mu*r)-(r**3), {omega}+({b}*(r**2))+noise, {epsilon}]
@@ -179,7 +179,7 @@ if __name__ == '__main__':
         label=None, color='orange'
     )
     set_axes_title(ax01, 'Hopf Without noise', fontsize=4)
-
+    
     ax1 = fig.add_subplot(spec[1, :])
     set_axes_title(ax1, 'Solutions as a function of time', fontsize=6)
     ax1.set_facecolor(plt.cm.gray(.95))
@@ -254,7 +254,7 @@ if __name__ == '__main__':
         ews_win_size, ews_offset, label='y'
     )
     fig.savefig(Path(__file__).parents[0]/f'tmp_figs/ys.png')
-    
+
 
     # PCA X-Y 
     fig, axs = plot_pca_analysis(x, y, 'EWS Of X&Y Without Noise (Hopf)')
@@ -267,6 +267,8 @@ if __name__ == '__main__':
     
     plt.show()
 
+
+# Todo: run analysis only on the radius. 
 # with noise / without noise
 # AR1, decay time, var
 # [x, y], [r, theta, mu], PCA
