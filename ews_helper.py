@@ -88,7 +88,7 @@ def get_ews(time, arr, win_size=21, offset=1):
             print(f'Failed to calculate vars. Error in #{i}\n{e}')
             failed = True
         if failed: 
-            exit(-1)
+            print('Failed during EWS calculate')
             
 
     ar_decay_times = ar_decay_times/np.mean(ar_decay_times)
