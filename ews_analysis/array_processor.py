@@ -4,11 +4,9 @@ import matplotlib.pyplot as plt
 
 #%% 
 
-n = sim_time_arr_len = 70
-# sim_time = np.linspace(0, 30, sim_time_arr_len)
-sim_time = np.arange(0, sim_time_arr_len)
-
-win_size=11
+n = sim_time_arr_len = 31
+sim_time = np.linspace(0, 30, sim_time_arr_len)
+win_size=9
 offset=3
 
 #%%
@@ -21,10 +19,6 @@ for i in block_idxs:
 
 
 # %%
-
-arr = np.arange(10)
-sw_view = np.lib.stride_tricks.sliding_window_view(
-    arr, 3)
-# %%
-s = np.lib.stride_tricks.as_strided(arr, (arr.size-4, 3), arr.strides*4)
+fig, ax = plt.subplots(2, 1, figsize=(10, 10))
+type(ax)
 # %%

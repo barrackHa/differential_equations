@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.stats import linregress
-from ews_helper import get_ews, itoEulerMaruyama
+from ews_analysis.ews_helper import get_ews, itoEulerMaruyama
 
 def set_axes_title(ax, text, fontsize=12):
     ax.title.set_text(text)
