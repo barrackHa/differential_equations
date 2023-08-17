@@ -60,44 +60,43 @@ def get_ews(time, arr, win_size=21, offset=1):
     vars = np.zeros_like(block_idxs, dtype=np.float64)
     
 
-    for i in tqdm(block_idxs):
+    for j, i in enumerate(tqdm(block_idxs)):
         # print(f'{i} / {len(block_idxs)}')
         failed = False
         try:
             lag0 = arr[i: i+win_size]
             lag1 = arr[i+offset: i+offset+win_size]
         except Exception as e:
-            print(f'Failed to splice arraies. Error in #{i}\n{e}')
+            print(f'Failed to splice arraies. Error in #{j}\n{e}')
             failed = True
         try:
             # ar1s[i] = np.corrcoef(lag0, lag1)[0, 1]
             a = arr[i: i+win_size]
             tmp_a = a-np.mean(a)
             ar1 = np.correlate(tmp_a, tmp_a, mode='full') / (np.cov(arr)* (n-1))
-            ar1s[i] = ar1[n]
+            ar1s[j] = ar1[win_size]
         except Exception as e:
-            print(f'Failed to calculate ar1s. Error in #{i}\n{e}')
+            print(f'Failed to calculate ar1s. Error in #{j}\n{e}')
+            raise e
             # ToDo: use logger instead of print
             # print('Calculating ar1s using covarience instead')
-            try:
-                c = np.cov(lag0, lag1)
-                if c[0,1]==0 or c[1,0]==0:
-                    ar1s[i] = c[0,0]
-                else:
-                    ar1s[i] = c[0,1]/np.sqrt(c[0,0]*c[1,1])
-            except Exception as e:
-                failed = True   
+            # try:
+            #     c = np.cov(lag0, lag1)
+            #     if c[0,1]==0 or c[1,0]==0:
+            #         ar1s[i] = c[0,0]
+            #     else:
+            #         ar1s[i] = c[0,1]/np.sqrt(c[0,0]*c[1,1])
+            # except Exception as e:
+            #     failed = True   
         try:
-            # ar_decay_times[i] = get_acorr_decay_time(lag0)
-            ar_decay_times[i] = 0
+            ar_decay_times[j] = get_acorr_decay_time(lag0)
         except Exception as e:
-            print(f'Failed to calculate ar_decay_times. Error in #{i}\n{e}')
+            print(f'Failed to calculate ar_decay_times. Error in #{j}\n{e}')
             failed = True
         try:
-            # vars[i] = np.var(lag0) 
-            vars[i] = 0
+            vars[j] = np.var(lag0) 
         except Exception as e:
-            print(f'Failed to calculate vars. Error in #{i}\n{e}')
+            print(f'Failed to calculate vars. Error in #{j}\n{e}')
             failed = True
         if failed: 
             print('Failed during EWS calculate')
