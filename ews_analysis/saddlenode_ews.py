@@ -110,6 +110,14 @@ if __name__ == '__main__':
 
 
     fig, axs = plt.subplots(3,1)
+    ax0, ax1, ax2 = axs
+    ax0.set_ylabel('AR1')
+    ax1.set_ylabel('Acorr Decay Times')
+    ax1.sharex(ax0)
+    ax2.set_ylabel('Variance')
+    ax2.sharex(ax0)
+    ax2.set_xlabel('Time')
+
     for ax in axs:
         ax.set_facecolor(plt.cm.gray(.95))
     # for win_size in [21,41,101]:
@@ -153,9 +161,17 @@ if __name__ == '__main__':
             # Put a legend to the right of the current axis
             ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
             # ax.legend()
+    ttl = f'EWS For Super Critical Hopf Bifurcation'
+    ttl += f'\n'+ f'window size={win_size}'
+    fig.suptitle(ttl)
     fig.savefig(Path(__file__).parents[0]/f'tmp_figs/sdnode_ews.png')
         
     fig, axs = plot(tt, xx, sol, epsilon, a, show_plot=False)
+    ttl = r"""Saddlenode Bifurcation"""
+    # ttl = ttl + "\n" + f""" [x_0, r_0]=[{r0}, {x0}], dt={dt}[Sec]"""
+
+    fig.suptitle(ttl, fontsize=10)
+
     axs[0].plot(
         tt, results[:,0], color='crimson', label='Maroyama_x(t)', ls='-.'
     )
@@ -166,5 +182,5 @@ if __name__ == '__main__':
     # Put a legend to the right of the current axis
     axs[0].legend(loc='center left', bbox_to_anchor=(1, 0.5))
     # axs[0].legend()
-    # fig.savefig(Path(__file__).parents[0]/f'tmp_figs/sdnode_data.png')
+    fig.savefig(Path(__file__).parents[0]/f'tmp_figs/sdnode_data.png')
     plt.show()
