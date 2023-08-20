@@ -4,7 +4,7 @@ import matplotlib.animation as animation
 from scipy.integrate import odeint, solve_ivp
 from scipy import optimize
 from mpl_toolkits.mplot3d import Axes3D
-from ews_analysis.ews_helper import get_ews, itoEulerMaruyama
+from ews_helper import get_ews, itoEulerMaruyama
 from scipy.stats import linregress
 from pathlib import Path
 
@@ -23,7 +23,13 @@ def plot(tt, xx, sol, epsilon, a, show_plot=True, stream_dim=5):
             max(sol.y[0, :])+5
     ])
     axs[0].grid()
-    axs[0].legend()
+    
+    box = axs[0].get_position()
+    axs[0].set_position([box.x0, box.y0, box.width * 0.8, box.height])
+
+    # Put a legend to the right of the current axis
+    axs[0].legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    # axs[0].legend()
 
 
     # Plot phase space of derivatives
@@ -38,7 +44,13 @@ def plot(tt, xx, sol, epsilon, a, show_plot=True, stream_dim=5):
     axs[1].set_ylabel(r'$\dot{x}$', rotation=0)
     axs[1].set_ylim([-2,2500])
     axs[1].set_xlim([min(xx),max(xx)])
-    axs[1].legend()
+    
+    box = axs[1].get_position()
+    axs[1].set_position([box.x0, box.y0, box.width * 0.8, box.height])
+
+    # Put a legend to the right of the current axis
+    axs[1].legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    # axs[1].legend()
 
     # Streamlines of X - Y space 
     w = stream_dim
@@ -135,13 +147,24 @@ if __name__ == '__main__':
         )
 
         for ax in axs:
-            ax.legend()
+            box = ax.get_position()
+            ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+
+            # Put a legend to the right of the current axis
+            ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+            # ax.legend()
     fig.savefig(Path(__file__).parents[0]/f'tmp_figs/sdnode_ews.png')
         
     fig, axs = plot(tt, xx, sol, epsilon, a, show_plot=False)
     axs[0].plot(
         tt, results[:,0], color='crimson', label='Maroyama_x(t)', ls='-.'
     )
-    axs[0].legend()
+
+    box = axs[0].get_position()
+    axs[0].set_position([box.x0, box.y0, box.width * 0.8, box.height])
+
+    # Put a legend to the right of the current axis
+    axs[0].legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    # axs[0].legend()
     # fig.savefig(Path(__file__).parents[0]/f'tmp_figs/sdnode_data.png')
     plt.show()
