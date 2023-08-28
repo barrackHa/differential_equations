@@ -113,9 +113,11 @@ def itoEulerMaruyama(model, y0, time, noise, args=None, save_derivative=False):
     noise = np.array(noise)
     y0 = np.array(y0)
     ret_val[0, :] = y0
-    dt = time[1] - time[0]
+    # print(y0)
+    # dt = time[1] - time[0]
     derivatives = np.zeros((len(time), len(y0)))
-    for i in range(1, len(time)):
+    for i in tqdm(range(1, len(time))):
+        dt = time[i] - time[i-1]
         derivatives[i-1, :] = np.array(
             model(time[i], ret_val[i - 1, :], *args) 
                 if args else model(ret_val[i - 1, :], time[i])
