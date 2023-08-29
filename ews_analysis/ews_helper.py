@@ -61,23 +61,23 @@ def get_ews(time, arr, win_size=21, offset=1):
     
 
     for j, i in enumerate(tqdm(block_idxs)):
-        # print(f'{i} / {len(block_idxs)}')
         failed = False
         try:
             lag0 = arr[i: i+win_size]
-            lag1 = arr[i+offset: i+offset+win_size]
+            # lag1 = arr[i+offset: i+offset+win_size]
         except Exception as e:
             print(f'Failed to splice arraies. Error in #{j}\n{e}')
             failed = True
         try:
-            # ar1s[j] = np.corrcoef(lag0, lag1)[0, 1]
+            # ar1s[j] = np.corrcoef(lag0[:-1], lag0[1:])[0, 1]
             a = arr[i: i+win_size]
+            l = win_size
             tmp_a = a - np.mean(a)
-            ar1 = np.correlate(tmp_a, tmp_a, mode='full') / (np.cov(arr)* (n-1))
+            ar1 = np.correlate(tmp_a, tmp_a, mode='full') / (np.cov(a)* (l-1))
             ar1s[j] = ar1[win_size]
         except Exception as e:
             print(f'Failed to calculate ar1s. Error in #{j}\n{e}')
-            print(f'lags: {lag0.shape}, {lag1.shape}')
+            # print(f'lags: {lag0.shape}, {lag1.shape}')
             print(f'index: {i}, win_size: {win_size}, offset: {offset}')
             raise e
             # ToDo: use logger instead of print
