@@ -17,7 +17,7 @@ def z_score_normalizer(arr, axis=0):
 def solve_equality(arr, r):
     return np.argmin(np.sign(arr - r))
 
-def get_acorr_decay_time(arr):
+def get_acorr_decay_time(arr, dt):
     try:
         frame_rate = 1
         tmp_a = z_score_normalizer(arr)
@@ -33,21 +33,21 @@ def get_acorr_decay_time(arr):
         yy = acorr[acorr.size // 2:]
         xx = np.arange(yy.size) / frame_rate
         piecewise_linear_acorr = interp1d(xx, yy, kind='linear')
-        # todo: find real delta and frame rate
-        delta = 0.001
+        # # todo: find real delta and frame rate
+        delta = dt
         grained_xx = np.arange(0, idx, delta) / frame_rate
         approximation = piecewise_linear_acorr(grained_xx)
         decay_time = solve_equality(
             approximation, 1 / np.e
-        ) * delta / frame_rate
+        ) #* delta / frame_rate
     except Exception as e:
         print(f'error in get_acorr_decay_time\n{e}')
-        exit(-1)
+        raise e
         
     return decay_time
 
 
-def get_ews(time, arr, win_size=21, offset=1):
+def get_ews(time, arr, win_size=21, offset=1, lag=1):
     """
     @Params: time, arr, win_size, offset
     Returns: dict of block_idxs and ar1s
@@ -69,12 +69,10 @@ def get_ews(time, arr, win_size=21, offset=1):
             print(f'Failed to splice arraies. Error in #{j}\n{e}')
             failed = True
         try:
-            # ar1s[j] = np.corrcoef(lag0[:-1], lag0[1:])[0, 1]
             a = arr[i: i+win_size]
-            l = win_size
             tmp_a = a - np.mean(a)
-            ar1 = np.correlate(tmp_a, tmp_a, mode='full') / (np.cov(a)* (l-1))
-            ar1s[j] = ar1[win_size]
+            ar1 = np.correlate(tmp_a, tmp_a, mode='full') / (np.cov(tmp_a)* win_size)
+            ar1s[j] = ar1[win_size - 1 + lag]
         except Exception as e:
             print(f'Failed to calculate ar1s. Error in #{j}\n{e}')
             # print(f'lags: {lag0.shape}, {lag1.shape}')
@@ -91,7 +89,7 @@ def get_ews(time, arr, win_size=21, offset=1):
             # except Exception as e:
             #     failed = True   
         try:
-            ar_decay_times[j] = get_acorr_decay_time(lag0)
+            ar_decay_times[j] = get_acorr_decay_time(lag0, time[j+1]-time[j])
         except Exception as e:
             print(f'Failed to calculate ar_decay_times. Error in #{j}\n{e}')
             failed = True
