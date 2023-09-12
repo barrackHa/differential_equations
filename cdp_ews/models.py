@@ -3,6 +3,16 @@ import pandas as pd
 
 from cdp_ews.helpers import itoEulerMaruyama
 
+def simulate_ts(ode_model, time, y0, noise, args):
+    
+    results,derivatives = itoEulerMaruyama(
+        model=ode_model,
+        y0=y0,
+        time=time,
+        noise=noise, args=args, save_derivative=True
+    )
+    return results,derivatives
+
 # Pitchfork bifurcation model
 
 def super_pitchfork(t, S, epsilon, a=1):
@@ -24,18 +34,13 @@ def super_pitchfork(t, S, epsilon, a=1):
         epsilon * shaper
     ]
 
-def simulate_super_pitchfork(time=None, **config):
-    try:
-        epsilon = config['epsilon']
-    except:
-        epsilon = 0.1
-    try:
-        y0 = config['y0']
-    except:
+def simulate_super_pitchfork(time, y0, epsilon, a, noise):
         
-    results,derivatives = itoEulerMaruyama(
-    model=super_pitchfork,
-    y0=[x0, r0],
-    time=time,
-    noise=[sigma,0],args=(epsilon,),save_derivative=True
-)
+    results, derivatives = simulate_ts(
+        ode_model=super_pitchfork,
+        time=time,
+        y0=y0,
+        noise=noise, args=(epsilon, a)
+    )
+
+    return results,derivatives
