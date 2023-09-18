@@ -169,7 +169,6 @@ class Model():
         self.y0 = config['y0']
 
         results, derivatives = simulate_ts(
-            # ode_model=saddlenode_yuval,
             ode_model=self.model_simulator,
             time=self.time,
             y0=self.y0,
@@ -181,10 +180,15 @@ class Model():
         return results, derivatives
         
     
-    def plot(self, fig, axs, **kwargs):
+    def plot(self, fig, axs, plot_t_star=True, **kwargs):
         fig, axs, t_star = plot_bif_sim(
             fig, axs, self.time, self.results, self.derivatives
         )
+        self.t_star = t_star
+        if plot_t_star:
+            # Plot t_star where r(t_star) = 0 = r0 + epsilon * t_star
+            axs[0].axvline(t_star, c='r', ls='--') #label=f't*={t_star:.2f}'
+
         # Set title
         t = self.time
         tmp_dt = np.mean(t[1:] - t[:-1])
@@ -193,7 +197,7 @@ class Model():
         ttl = ttl + f"x0={x0}, epsilon={self.epsilon}, sigma_noise={self.sigma_noise}, a={self.a}"
         fig.suptitle(ttl, fontsize=10)
 
-        self.t_star = t_star
+        
         return fig, axs, t_star
     
     def simulate_and_plot(self, **kwargs):
@@ -213,10 +217,26 @@ class SuperCriticalPitchfork(Model):
         self.ttl = config['ttl']
         return self.results, self.derivatives
     
-    def plot(self, fig, axs, **kwargs):
+    def plot(self, fig, axs, plot_roots=False, **kwargs):
         fig, axs, t_star = super().plot(fig, axs, **kwargs)
 
+        if plot_roots:
+            self._plot_roots_of_pitchfork(axs[0])
+
         return fig, axs, t_star
+    
+    def _plot_roots_of_pitchfork(self, ax, **kwargs):
+        """Roots of rx-ax^3 are 0 and +-sqrt(r/a), Plot them"""
+        time, a, results = self.time, self.a, self.results
+        t_zero = np.where(results[:,1] >= 0)[0][0]
+        roots_abs = np.zeros_like(results[:, 1])
+        roots_abs[t_zero:] = (np.sqrt(results[t_zero:, 1] / a))
+        # roots_abs[t_zero:] = a/results[t_zero:, 1] 
+        ax.plot(time, roots_abs, color='black', label='roots of rx-ax^3')
+        ax.plot(time, -1*roots_abs, color='black')
+        ax.plot(time, 0*roots_abs, color='black', ls='--')
+        ax.legend()
+        return ax
     
     def simulate_and_plot(self, **kwargs):
         self.simulate(**kwargs)
@@ -274,8 +294,9 @@ if __name__ == '__main__':
         res, des = scp_model.simulate(config=config)
         print(res.shape, des.shape)
         fig, axs, t_star = scp_model.plot(fig=fig, axs=axs)
-    # plt.show()
-
+    fig, axs, t_star = scp_model.plot(fig=fig, axs=axs, plot_roots=True)
+    plt.show()
+    exit()
     fig.clear()
     plt.close()
 
